@@ -14,3 +14,15 @@ To run the unit tests, install [ginkgo](https://onsi.github.io/ginkgo) and [gome
 ```
 ginkgo -r
 ```
+
+## Usage
+
+```go
+client := hubspot.NewClient("https://api.hubapi.com", "my-api-key")
+
+// send single email
+err := client.SingleEmail(12345678, "tyler.durden@gmail.com")
+if err != nil {
+	log.Fatalf("hubspot error: %s", err.Error())
+}
+```
