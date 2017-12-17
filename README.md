@@ -3,7 +3,7 @@
 # go-hubspot
 [Go](https://golang.org/) client for [HubSpot](https://app.hubspot.com)
 
-*Note: This currently does not implement all HubSpot API endpoints*
+*Note: This currently does not implement all HubSpot API endpoints, however pull requests are welcome*
 
 ## Install
 ```
