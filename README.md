@@ -21,7 +21,8 @@ ginkgo -r
 client := hubspot.NewClient("https://api.hubapi.com", "my-api-key")
 
 // send single email
-err := client.SingleEmail(12345678, "tyler.durden@gmail.com")
+emailId := 12345678
+err := client.SingleEmail(emailId, "tyler.durden@gmail.com")
 if err != nil {
 	log.Fatalf("hubspot error: %s", err.Error())
 }
