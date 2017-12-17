@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bold-commerce/go-hubspot.png)](https://travis-ci.org/bold-commerce/go-hubspot)
+
 # go-hubspot
 [Go](https://golang.org/) client for [HubSpot](https://app.hubspot.com)
 
