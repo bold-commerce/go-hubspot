@@ -40,19 +40,10 @@ func (c *Client) SingleEmail(emailId int, emailTo string) error {
 		URL:          fmt.Sprintf("%s/email/public/v1/singleEmail/send?hapikey=%s", c.baseUrl, c.apiKey),
 		Method:       http.MethodPost,
 		Body:         body,
-		OkStatusCode: http.StatusCreated,
+		OkStatusCode: http.StatusOK,
 	})
 
-	// Single Email Response
-	// sendResult — A SendResult value (see below)
-	// message — A description of the send result details.
-	// eventId — If sent, the id and created timestamp of the sent event.
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 type request struct {
