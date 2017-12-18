@@ -20,12 +20,22 @@ ginkgo -r
 ## Usage
 
 ```go
-client := hubspot.NewClient("https://api.hubapi.com", "my-api-key")
+package main
 
-// send single email
-emailId := 12345678
-err := client.SingleEmail(emailId, "tyler.durden@gmail.com")
-if err != nil {
-	log.Fatalf("hubspot error: %s", err.Error())
+import (
+	"log"
+
+	"github.com/bold-commerce/go-hubspot/hubspot"
+)
+
+func main() {
+  client := hubspot.NewClient("https://api.hubapi.com", "my-api-key")
+
+  // send single email
+  emailId := 12345678
+  err := client.SingleEmail(emailId, "tyler.durden@gmail.com")
+  if err != nil {
+    log.Fatalf("hubspot error: %s", err.Error())
+  }
 }
 ```
