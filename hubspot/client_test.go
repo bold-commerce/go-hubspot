@@ -1,8 +1,10 @@
 package hubspot_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 
 	"github.com/bold-commerce/go-hubspot/hubspot"
@@ -50,6 +52,196 @@ var _ = Describe("Client", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+	})
+
+	Describe("CreateOrUpdateContact", func() {
+		var (
+			server *httptest.Server
+		)
+
+		BeforeEach(func() {
+			response, _ := json.Marshal(map[string]interface{}{"vid": 751, "isNew": true})
+
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.Contains(r.RequestURI, "/contacts/v1/contact/createOrUpdate/email/") {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(response))
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+		})
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("creates an email an returns response from api", func() {
+			properties := []hubspot.Property{hubspot.Property{}}
+			response, err := client.CreateOrUpdateContact("gord.currie@boldcommerce.com", properties)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(response.Body)).To(Equal(`{"isNew":true,"vid":751}`))
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
+	Describe("AddContactsToList", func() {
+		var (
+			server *httptest.Server
+		)
+
+		BeforeEach(func() {
+			response, _ := json.Marshal(map[string]interface{}{"updated": []int{751}, "discarded": []int{}, "invalidVids": []int{}, "invalidEmails": []string{}})
+
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/add\\?hapikey=.*", r.RequestURI)
+				if match {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(response))
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+		})
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("removes emails from list and returns response from api", func() {
+			emails := []string{"gord.currie@boldcommerce.com"}
+			response, err := client.AddContactsToList(emails, 5)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
+	Describe("RemoveContactsFromList", func() {
+		var (
+			server *httptest.Server
+		)
+
+		BeforeEach(func() {
+			response, _ := json.Marshal(map[string]interface{}{"updated": []int{751}, "discarded": []int{}, "invalidVids": []int{}, "invalidEmails": []string{}})
+
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/remove\\?hapikey=.*", r.RequestURI)
+				if match {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(response))
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+		})
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("removes emails from list and returns response from api", func() {
+			emails := []string{"gord.currie@boldcommerce.com"}
+			response, err := client.RemoveContactsFromList(emails, 5)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
+	Describe("AddContactToWorkFlow", func() {
+		var (
+			server *httptest.Server
+		)
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("removes email from workflow", func() {
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
+				if match {
+					w.WriteHeader(http.StatusNoContent)
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+
+			err := client.AddContactToWorkFlow("gord.currie@boldcommerce.com", 2494115)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns an error if the contact email is not found", func() {
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
+				if match {
+					w.WriteHeader(http.StatusNotFound)
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+
+			err := client.AddContactToWorkFlow("gord.currie@boldcommerce.com", 2494115)
+			Expect(err).To(MatchError(ContainSubstring("Error: 404 Not Found")))
+		})
+	})
+
+	Describe("RemoveContactFromWorkFlow", func() {
+		var (
+			server *httptest.Server
+		)
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("removes email from workflow", func() {
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
+				if match {
+					w.WriteHeader(http.StatusNoContent)
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+
+			err := client.RemoveContactFromWorkFlow("gord.currie@boldcommerce.com", 2494115)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns an error if the contact email is not found", func() {
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
+				if match {
+					w.WriteHeader(http.StatusNotFound)
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+
+			err := client.RemoveContactFromWorkFlow("gord.currie@boldcommerce.com", 2494115)
+			Expect(err).To(MatchError(ContainSubstring("Error: 404 Not Found")))
+		})
 	})
 })
 
