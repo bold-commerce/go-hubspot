@@ -46,6 +46,82 @@ func (c *Client) SingleEmail(emailId int, emailTo string) error {
 	return err
 }
 
+// Hubspot Create or update a contact
+// example https://api.hubapi.com/contacts/v1/contact/createOrUpdate/email/testingapis@hubspot.com/?hapikey=demo
+func (c *Client) CreateOrUpdateContact(emailAddress string, properties []Property) (response, error) {
+	req := ContactBody{
+		Properties: properties,
+	}
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return response{}, fmt.Errorf("invalid request:", err)
+	}
+
+	response, err := c.doRequest(request{
+		URL:          fmt.Sprintf("%s/contacts/v1/contact/createOrUpdate/email/%s/?hapikey=%s", c.baseUrl, emailAddress, c.apiKey),
+		Method:       http.MethodPost,
+		Body:         body,
+		OkStatusCode: http.StatusOK,
+	})
+
+	return response, err
+}
+
+// Hubspot add contact to list
+// example https://api.hubapi.com/contacts/v1/lists/226468/add?hapikey=demo
+func (c *Client) AddContactsToList(emails []string, listId int) (response, error) {
+	return c.updateListWithContacts(listId, emails, "add")
+}
+
+func (c *Client) RemoveContactsFromList(emails []string, listId int) (response, error) {
+	return c.updateListWithContacts(listId, emails, "remove")
+}
+
+// Hubspot remove contact to list
+// example https://api.hubapi.com/contacts/v1/lists/226468/remove?hapikey=demo
+func (c *Client) updateListWithContacts(listId int, emails []string, method string) (response, error) {
+	req := ListBody{
+		Emails: emails,
+	}
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return response{}, fmt.Errorf("invalid request:", err)
+	}
+
+	response, err := c.doRequest(request{
+		URL:          fmt.Sprintf("%s/contacts/v1/lists/%d/%s?hapikey=%s", c.baseUrl, listId, method, c.apiKey),
+		Method:       http.MethodPost,
+		Body:         body,
+		OkStatusCode: http.StatusOK,
+	})
+
+	return response, err
+}
+
+// Hubspot add contact to workflow
+// example https://api.hubapi.com/automation/v2/workflows/10900/enrollments/contacts/testingapis@hubspot.com?hapikey=demo
+func (c *Client) AddContactToWorkFlow(email string, workflowId int) error {
+	return c.updateWorkflowForClient(email, workflowId, http.MethodPost)
+}
+
+// Hubspot remove contact from workflow
+// example https://api.hubapi.com/automation/v2/workflows/10900/enrollments/contacts/testingapis@hubspot.com?hapikey=demo
+func (c *Client) RemoveContactFromWorkFlow(email string, workflowId int) error {
+	return c.updateWorkflowForClient(email, workflowId, http.MethodDelete)
+}
+
+func (c *Client) updateWorkflowForClient(email string, workflowId int, method string) error {
+	_, err := c.doRequest(request{
+		URL:          fmt.Sprintf("%s/automation/v2/workflows/%d/enrollments/contacts/%s?hapikey=%s", c.baseUrl, workflowId, email, c.apiKey),
+		Method:       method,
+		OkStatusCode: http.StatusNoContent,
+	})
+
+	return err
+}
+
 type request struct {
 	URL          string
 	Method       string
