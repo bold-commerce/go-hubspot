@@ -33,7 +33,7 @@ func (c *Client) SingleEmail(emailId int, emailTo string) error {
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return fmt.Errorf("invalid request: ", err)
+		return fmt.Errorf("invalid request: %s", err.Error())
 	}
 
 	_, err = c.doRequest(request{
@@ -48,14 +48,14 @@ func (c *Client) SingleEmail(emailId int, emailTo string) error {
 
 // Hubspot Create or update a contact
 // example https://api.hubapi.com/contacts/v1/contact/createOrUpdate/email/testingapis@hubspot.com/?hapikey=demo
-func (c *Client) CreateOrUpdateContact(emailAddress string, properties []Property) (response, error) {
+func (c *Client) CreateOrUpdateContact(emailAddress string, properties []Property) (Response, error) {
 	req := ContactBody{
 		Properties: properties,
 	}
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return response{}, fmt.Errorf("invalid request:", err)
+		return Response{}, fmt.Errorf("invalid request: %s", err.Error())
 	}
 
 	response, err := c.doRequest(request{
@@ -70,24 +70,24 @@ func (c *Client) CreateOrUpdateContact(emailAddress string, properties []Propert
 
 // Hubspot add contact to list
 // example https://api.hubapi.com/contacts/v1/lists/226468/add?hapikey=demo
-func (c *Client) AddContactsToList(emails []string, listId int) (response, error) {
+func (c *Client) AddContactsToList(emails []string, listId int) (Response, error) {
 	return c.updateListWithContacts(listId, emails, "add")
 }
 
-func (c *Client) RemoveContactsFromList(emails []string, listId int) (response, error) {
+func (c *Client) RemoveContactsFromList(emails []string, listId int) (Response, error) {
 	return c.updateListWithContacts(listId, emails, "remove")
 }
 
 // Hubspot remove contact to list
 // example https://api.hubapi.com/contacts/v1/lists/226468/remove?hapikey=demo
-func (c *Client) updateListWithContacts(listId int, emails []string, method string) (response, error) {
+func (c *Client) updateListWithContacts(listId int, emails []string, method string) (Response, error) {
 	req := ListBody{
 		Emails: emails,
 	}
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return response{}, fmt.Errorf("invalid request:", err)
+		return Response{}, fmt.Errorf("invalid request: %s", err.Error())
 	}
 
 	response, err := c.doRequest(request{
@@ -129,34 +129,34 @@ type request struct {
 	OkStatusCode int
 }
 
-type response struct {
+type Response struct {
 	Body       []byte
 	StatusCode int
 }
 
-func (c *Client) doRequest(r request) (response, error) {
+func (c *Client) doRequest(r request) (Response, error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest(r.Method, r.URL, bytes.NewBuffer(r.Body))
 	if err != nil {
-		return response{}, err
+		return Response{}, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return response{}, err
+		return Response{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return response{}, err
+		return Response{}, err
 	}
 
 	if resp.StatusCode != r.OkStatusCode {
-		return response{}, fmt.Errorf("Error: %s details: %s\n", resp.Status, body)
+		return Response{}, fmt.Errorf("Error: %s details: %s\n", resp.Status, body)
 	}
-	return response{Body: body, StatusCode: resp.StatusCode}, nil
+	return Response{Body: body, StatusCode: resp.StatusCode}, nil
 }
