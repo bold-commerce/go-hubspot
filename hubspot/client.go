@@ -33,7 +33,7 @@ func (c *Client) SingleEmail(emailId int, emailTo string) error {
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return fmt.Errorf("invalid request: ", err)
+		return fmt.Errorf("invalid request: %s", err.Error())
 	}
 
 	_, err = c.doRequest(request{
@@ -55,7 +55,7 @@ func (c *Client) CreateOrUpdateContact(emailAddress string, properties []Propert
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return Response{}, fmt.Errorf("invalid request:", err)
+		return Response{}, fmt.Errorf("invalid request: %s", err.Error())
 	}
 
 	response, err := c.doRequest(request{
@@ -87,7 +87,7 @@ func (c *Client) updateListWithContacts(listId int, emails []string, method stri
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return Response{}, fmt.Errorf("invalid request:", err)
+		return Response{}, fmt.Errorf("invalid request: %s", err.Error())
 	}
 
 	response, err := c.doRequest(request{
