@@ -23,19 +23,23 @@ func NewClient(baseUrl, apiKey string) *Client {
 // Hubspot single send email API
 // example: https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey=demo
 func (c *Client) SingleEmail(emailId int, emailTo string) error {
-
-	req := SingleSendEmailRequest{
+	req := SendEmailRequest{
 		EmailID: emailId,
 		Message: Message{
 			To: emailTo,
 		},
 	}
+	return c.Email(req)
+}
 
-	body, err := json.Marshal(req)
+// Hubspot send email API
+// example: https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey=demo
+func (c *Client) Email(emailRequest SendEmailRequest) error {
+
+	body, err := json.Marshal(emailRequest)
 	if err != nil {
 		return fmt.Errorf("invalid request: %s", err.Error())
 	}
-
 	_, err = c.doRequest(request{
 		URL:          fmt.Sprintf("%s/email/public/v1/singleEmail/send?hapikey=%s", c.baseUrl, c.apiKey),
 		Method:       http.MethodPost,
