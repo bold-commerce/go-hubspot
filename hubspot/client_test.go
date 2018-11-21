@@ -2,6 +2,7 @@ package hubspot_test
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -31,6 +32,7 @@ var _ = Describe("Client", func() {
 
 		BeforeEach(func() {
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				if strings.Contains(r.RequestURI, "/email/public/v1/singleEmail/send") {
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte(singleEmailResp))
@@ -54,6 +56,52 @@ var _ = Describe("Client", func() {
 
 	})
 
+	Describe("Email", func() {
+		var (
+			server *httptest.Server
+		)
+
+		BeforeEach(func() {
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
+				if strings.Contains(r.RequestURI, "/email/public/v1/singleEmail/send") {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(singleEmailResp))
+					b, err := ioutil.ReadAll(r.Body)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(b).To(MatchJSON(b))
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			client = hubspot.NewClient(server.URL, "my-api-key")
+			Expect(client).ToNot(BeNil())
+		})
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("sends a single customized email", func() {
+			email := hubspot.SendEmailRequest{
+				EmailID: 2853049635,
+				Message: hubspot.Message{
+					To:     "example@hubspot.com",
+					SendID: "foobar",
+				},
+				ContactProperties: []hubspot.MergeField{
+					{Name: "first_name", Value: "John"},
+				},
+				CustomProperties: []hubspot.MergeField{
+					{Name: "item_1", Value: "something they bought"},
+				}}
+			err := client.Email(email)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+	})
+
 	Describe("CreateOrUpdateContact", func() {
 		var (
 			server *httptest.Server
@@ -63,6 +111,7 @@ var _ = Describe("Client", func() {
 			response, _ := json.Marshal(map[string]interface{}{"vid": 751, "isNew": true})
 
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				if strings.Contains(r.RequestURI, "/contacts/v1/contact/createOrUpdate/email/") {
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte(response))
@@ -97,6 +146,7 @@ var _ = Describe("Client", func() {
 			response, _ := json.Marshal(map[string]interface{}{"updated": []int{751}, "discarded": []int{}, "invalidVids": []int{}, "invalidEmails": []string{}})
 
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/add\\?hapikey=.*", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusOK)
@@ -131,6 +181,7 @@ var _ = Describe("Client", func() {
 			response, _ := json.Marshal(map[string]interface{}{"updated": []int{751}, "discarded": []int{}, "invalidVids": []int{}, "invalidEmails": []string{}})
 
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/remove\\?hapikey=.*", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusOK)
@@ -167,6 +218,7 @@ var _ = Describe("Client", func() {
 
 		It("removes email from workflow", func() {
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusNoContent)
@@ -184,6 +236,7 @@ var _ = Describe("Client", func() {
 
 		It("returns an error if the contact email is not found", func() {
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusNotFound)
@@ -211,6 +264,7 @@ var _ = Describe("Client", func() {
 
 		It("removes email from workflow", func() {
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusNoContent)
@@ -228,6 +282,7 @@ var _ = Describe("Client", func() {
 
 		It("returns an error if the contact email is not found", func() {
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				match, _ := regexp.MatchString(".*automation/v2/workflows/\\d*/enrollments/contacts/.*", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusNotFound)
@@ -253,3 +308,24 @@ const singleEmailResp = `{
       "created":1513626117453
    }
 }`
+const emailRequest = `
+{
+    "emailId": 2853049635,
+    "message": {
+        "to": "example@hubspot.com",
+        "sendId": "foobar"
+    },
+    "contactProperties": [
+        {
+            "name": "first_name",
+            "value": "John"
+        }
+    ],
+    "customProperties": [
+        {
+            "name": "item_1",
+            "value": "something they bought"
+        }
+    ]
+}
+`
