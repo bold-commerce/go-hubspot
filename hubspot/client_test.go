@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/bold-commerce/go-hubspot/hubspot"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -147,7 +147,7 @@ var _ = Describe("Client", func() {
 
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				defer GinkgoRecover()
-				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/add\\?hapikey=.*", r.RequestURI)
+				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/add", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte(response))
@@ -182,7 +182,7 @@ var _ = Describe("Client", func() {
 
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				defer GinkgoRecover()
-				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/remove\\?hapikey=.*", r.RequestURI)
+				match, _ := regexp.MatchString(".*contacts/v1/lists/\\d*/remove", r.RequestURI)
 				if match {
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte(response))
